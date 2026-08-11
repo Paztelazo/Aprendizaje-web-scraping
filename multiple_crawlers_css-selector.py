@@ -698,7 +698,7 @@ siteData = [
         "Brookings",
         "http://www.brookings.edu",
         "h1",
-        "p"
+        "div.byo-block.wysiwyg-block.wysiwyg"
     ],
 
     [
