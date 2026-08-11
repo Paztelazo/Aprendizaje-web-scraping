@@ -8,15 +8,9 @@ from bs4 import BeautifulSoup
 
 class Content:
     """
-    CONTENT = EL RESULTADO DEL SCRAPING.
+    CONTENT = RESULTADO DEL SCRAPING.
 
-    Esta clase NO descarga páginas.
-    Esta clase NO busca elementos.
-
-    Solo sirve para GUARDAR los datos reales
-    que ya encontramos en UNA página.
-
-    Ejemplo mental:
+    Guarda los datos REALES encontrados.
 
     content
     ├── url
@@ -27,21 +21,14 @@ class Content:
 
     def __init__(self, url, title, body):
 
-        # URL real de la página scrapeada.
         self.url = url
 
-        # Título real encontrado.
         self.title = title
 
-        # Cuerpo real encontrado.
         self.body = body
 
 
     def print(self):
-        """
-        Muestra en pantalla los datos
-        guardados dentro del objeto Content.
-        """
 
         print(f"URL: {self.url}")
 
@@ -57,37 +44,21 @@ class Content:
 
 class Website:
     """
-    WEBSITE = LAS INSTRUCCIONES PARA SCRAPEAR UN SITIO.
+    WEBSITE = INSTRUCCIONES.
 
-    NO guarda el título real.
-    NO guarda el cuerpo real.
+    Guarda:
 
-    Guarda DÓNDE debemos buscar esos datos.
+    name
+    → nombre del sitio
 
-    Ejemplo:
+    url
+    → URL principal
 
-    Website
-    ├── name
-    │   └── "Brookings"
-    │
-    ├── url
-    │   └── "https://www.brookings.edu"
-    │
-    ├── title_selector
-    │   └── "h1"
-    │
-    └── body_selector
-        └── "div.post-body"
+    title_selector
+    → dónde buscar el título
 
-
-    DIFERENCIA:
-
-    title_selector = "h1"
-    → INSTRUCCIÓN de dónde buscar
-
-
-    title = "Mi artículo"
-    → DATO REAL encontrado
+    body_selector
+    → dónde buscar el cuerpo
     """
 
 
@@ -99,16 +70,12 @@ class Website:
         body_selector
     ):
 
-        # Nombre del sitio.
         self.name = name
 
-        # URL principal del sitio.
         self.url = url
 
-        # Dónde buscar el título.
         self.title_selector = title_selector
 
-        # Dónde buscar el cuerpo.
         self.body_selector = body_selector
 
 
@@ -118,21 +85,6 @@ class Website:
 # =========================================================
 
 class Crawler:
-    """
-    CRAWLER = EL TRABAJADOR.
-
-    Tiene tres tareas:
-
-    getPage()
-    → DESCARGAR
-
-    safeGet()
-    → EXTRAER
-
-    parse()
-    → COORDINAR TODO
-    """
-
 
 
     # =====================================================
@@ -141,9 +93,7 @@ class Crawler:
 
     def getPage(self, url):
         """
-        GET PAGE = DESCARGAR UNA PÁGINA.
-
-        Flujo:
+        GET PAGE = DESCARGAR.
 
         url
          ↓
@@ -151,7 +101,7 @@ class Crawler:
          ↓
         response
          ↓
-        response.text
+        verificar HTTP
          ↓
         BeautifulSoup
          ↓
@@ -166,35 +116,53 @@ class Crawler:
         print(url)
 
 
+        # -------------------------------------------------
+        # USER AGENT
+        # -------------------------------------------------
+
+        # Indicamos un User-Agent típico de navegador.
+        #
+        # Algunas páginas rechazan solicitudes
+        # que no contienen uno.
+
+        headers = {
+
+            "User-Agent":
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/151.0.0.0 "
+            "Safari/537.36"
+
+        }
+
+
         try:
 
-            # Hace la solicitud HTTP.
-            #
-            # timeout=10 significa:
-            #
-            # "No te quedes esperando demasiado
-            # si el servidor no responde correctamente."
             response = requests.get(
                 url,
+                headers=headers,
                 timeout=10
             )
 
 
         # -------------------------------------------------
-        # CASO: LA PÁGINA TARDA DEMASIADO
+        # TIMEOUT
         # -------------------------------------------------
 
         except requests.exceptions.Timeout:
 
             print(
-                "\n❌ La página tardó demasiado en responder."
+                "\n❌ La página tardó demasiado "
+                "en responder."
             )
 
             return None
 
 
         # -------------------------------------------------
-        # CASO: OTRO ERROR DE REQUESTS
+        # OTRO ERROR DE REQUESTS
         # -------------------------------------------------
 
         except requests.exceptions.RequestException as error:
@@ -208,8 +176,8 @@ class Crawler:
             return None
 
 
+
         # -------------------------------------------------
-        # SI LLEGAMOS AQUÍ:
         # EL SERVIDOR RESPONDIÓ
         # -------------------------------------------------
 
@@ -218,36 +186,69 @@ class Crawler:
         )
 
 
-        # Código HTTP recibido.
-        #
-        # Ejemplos:
-        #
-        # 200 → OK
-        # 403 → acceso prohibido
-        # 404 → no encontrado
         print(
             f"Estado HTTP: {response.status_code}"
         )
 
 
-        # requests puede seguir redirecciones.
-        #
-        # Por eso mostramos también
-        # dónde terminamos realmente.
         print(
             f"URL final: {response.url}"
         )
 
 
-        # Convertimos el HTML recibido
-        # en un objeto BeautifulSoup.
+
+        # -------------------------------------------------
+        # COMPROBAR STATUS CODE
+        # -------------------------------------------------
+
+        # Queremos continuar solamente
+        # cuando recibimos HTTP 200.
+        #
+        #
+        # Ejemplos:
+        #
+        # 200 → OK
+        #
+        # 401 → Unauthorized
+        #
+        # 403 → Forbidden
+        #
+        # 404 → Not Found
+
+
+        if response.status_code != 200:
+
+            print(
+                "\n❌ El servidor NO entregó "
+                "la página correctamente."
+            )
+
+
+            print(
+                "No intentaremos buscar "
+                "selectores CSS."
+            )
+
+
+            return None
+
+
+
+        # -------------------------------------------------
+        # CREAR BEAUTIFULSOUP
+        # -------------------------------------------------
+
         page = BeautifulSoup(
             response.text,
             "html.parser"
         )
 
 
-        # Devolvemos la página preparada.
+        print(
+            "\n✅ Página convertida a BeautifulSoup."
+        )
+
+
         return page
 
 
@@ -258,160 +259,59 @@ class Crawler:
 
     def safeGet(self, page, selector):
         """
-        SAFE GET = EXTRAER UN DATO.
+        SAFE GET = EXTRAER.
 
         page
         =
-        DÓNDE buscar
+        dónde buscar
 
 
         selector
         =
-        QUÉ buscar
-
-
-        Ejemplo:
-
-        safeGet(
-            page,
-            "h1"
-        )
-
-
-        podría devolver:
-
-        "Mi artículo"
-
-
-        Si no encuentra nada:
-
-        return ""
+        qué buscar
         """
 
-
-        # -------------------------------------------------
-        # PASO 1
-        # BUSCAR
-        # -------------------------------------------------
 
         selected_elements = page.select(
             selector
         )
 
 
-        # Ejemplo:
-        #
-        # HTML:
-        #
-        # <h1>Mi artículo</h1>
-        #
-        #
-        # selector:
-        #
-        # "h1"
-        #
-        #
-        # page.select("h1")
-        #
-        # devuelve:
-        #
-        # [
-        #     <h1>Mi artículo</h1>
-        # ]
-        #
-        #
-        # Eso se guarda en:
-        #
-        # selected_elements
-
-
-
         # -------------------------------------------------
-        # PASO 2
-        # ¿ENCONTRAMOS ALGO?
+        # SI NO ENCONTRÓ NADA
         # -------------------------------------------------
 
         if len(selected_elements) == 0:
 
-            # Si no encontró nada:
-            #
-            # selected_elements = []
-            #
-            # devolvemos un string vacío.
             return ""
 
 
 
         # -------------------------------------------------
-        # PASO 3
-        # PREPARAR LISTA DE TEXTOS
+        # EXTRAER LOS TEXTOS
         # -------------------------------------------------
 
         texts = []
 
 
-
-        # -------------------------------------------------
-        # PASO 4
-        # RECORRER LOS ELEMENTOS ENCONTRADOS
-        # -------------------------------------------------
-
         for element in selected_elements:
 
-            # Ejemplo:
-            #
-            # element =
-            #
-            # <p>Hola</p>
-
-
-            # Extraemos solamente el texto.
-            #
-            # <p>Hola</p>
-            #
-            #      ↓
-            #
-            # "Hola"
             text = element.get_text()
 
-
-            # Guardamos el texto.
-            texts.append(text)
+            texts.append(
+                text
+            )
 
 
 
         # -------------------------------------------------
-        # PASO 5
         # UNIR LOS TEXTOS
         # -------------------------------------------------
-
-        # Ejemplo:
-        #
-        # texts =
-        #
-        # [
-        #     "Párrafo 1",
-        #     "Párrafo 2"
-        # ]
-        #
-        #
-        # "\n".join(texts)
-        #
-        # produce:
-        #
-        # Párrafo 1
-        # Párrafo 2
 
         result = "\n".join(
             texts
         )
 
-
-
-        # -------------------------------------------------
-        # PASO 6
-        # DEVOLVER RESULTADO
-        # -------------------------------------------------
 
         return result
 
@@ -423,35 +323,13 @@ class Crawler:
 
     def parse(self, site, url):
         """
-        PARSE = COORDINAR TODO EL PROCESO.
-
-        Recibe:
+        PARSE = COORDINADOR.
 
         site
-        → objeto Website con instrucciones
-
+        → instrucciones Website
 
         url
-        → página concreta que queremos scrapear
-
-
-        Flujo:
-
-        getPage()
-            ↓
-        page
-            ↓
-        safeGet(título)
-            ↓
-        title
-            ↓
-        safeGet(cuerpo)
-            ↓
-        body
-            ↓
-        Content(...)
-            ↓
-        return content
+        → artículo específico
         """
 
 
@@ -468,22 +346,25 @@ class Crawler:
 
         # -------------------------------------------------
         # PASO 1
-        # DESCARGAR PÁGINA
+        # DESCARGAR
         # -------------------------------------------------
 
-        page = self.getPage(url)
+        page = self.getPage(
+            url
+        )
 
 
 
         # -------------------------------------------------
         # PASO 2
-        # ¿PUDIMOS OBTENER LA PÁGINA?
+        # ¿TENEMOS PÁGINA?
         # -------------------------------------------------
 
         if page is None:
 
             print(
-                "\n❌ No se pudo obtener la página."
+                "\n❌ No podemos continuar "
+                "con este sitio."
             )
 
             return None
@@ -506,22 +387,11 @@ class Crawler:
         )
 
 
-        # Ejemplo:
-        #
-        # site.title_selector = "h1"
-        #
-        #
-        # entonces realmente hacemos:
-        #
-        # safeGet(
-        #     page,
-        #     "h1"
-        # )
-
         title = self.safeGet(
             page,
             site.title_selector
         )
+
 
 
         if title == "":
@@ -530,11 +400,13 @@ class Crawler:
                 "❌ No se encontró el título."
             )
 
+
         else:
 
             print(
                 "✅ Título encontrado."
             )
+
 
             print(
                 f"Título: {title}"
@@ -558,23 +430,11 @@ class Crawler:
         )
 
 
-        # Ejemplo:
-        #
-        # site.body_selector =
-        # "div.post-body"
-        #
-        #
-        # entonces:
-        #
-        # safeGet(
-        #     page,
-        #     "div.post-body"
-        # )
-
         body = self.safeGet(
             page,
             site.body_selector
         )
+
 
 
         if body == "":
@@ -582,6 +442,7 @@ class Crawler:
             print(
                 "❌ No se encontró el cuerpo."
             )
+
 
         else:
 
@@ -593,11 +454,11 @@ class Crawler:
 
         # -------------------------------------------------
         # PASO 5
-        # MOSTRAR DIAGNÓSTICO
+        # DIAGNÓSTICO
         # -------------------------------------------------
 
         print(
-            "\nResultado de la búsqueda:"
+            "\nResultado:"
         )
 
 
@@ -616,7 +477,7 @@ class Crawler:
 
         # -------------------------------------------------
         # PASO 6
-        # COMPROBAR QUE TENEMOS AMBOS DATOS
+        # SI FALTA ALGO
         # -------------------------------------------------
 
         if title == "" or body == "":
@@ -636,12 +497,12 @@ class Crawler:
         # -------------------------------------------------
 
         print(
-            "\n✅ Se encontraron ambos datos."
+            "\n✅ Título y cuerpo encontrados."
         )
 
 
         print(
-            "Creando objeto Content..."
+            "Creando Content..."
         )
 
 
@@ -652,81 +513,83 @@ class Crawler:
         )
 
 
-
-        # -------------------------------------------------
-        # PASO 8
-        # DEVOLVER CONTENT
-        # -------------------------------------------------
-
         return content
 
 
 
 # =========================================================
-# 4. CREAR EL CRAWLER
+# 4. CREAR CRAWLER
 # =========================================================
-
-# Aquí recién creamos un objeto Crawler.
-#
-# Hasta antes solo habíamos DEFINIDO la clase.
 
 crawler = Crawler()
 
 
 
 # =========================================================
-# 5. DATOS DE LOS SITIOS
+# 5. DATOS DE LOS WEBSITES
 # =========================================================
 
 siteData = [
 
+    # -----------------------------------------------------
+    # O'REILLY
+    # -----------------------------------------------------
+
     [
         "O'Reilly Media",
-        "http://oreilly.com",
+        "https://www.oreilly.com",
         "h1",
         "section#product-description"
     ],
 
+
+    # -----------------------------------------------------
+    # REUTERS
+    # -----------------------------------------------------
+
     [
         "Reuters",
-        "http://reuters.com",
+        "https://www.reuters.com",
         "h1",
         "div.StandardArticleBody_body_1gnLA"
     ],
 
+
+    # -----------------------------------------------------
+    # BROOKINGS
+    # -----------------------------------------------------
+
     [
         "Brookings",
-        "http://www.brookings.edu",
+        "https://www.brookings.edu",
         "h1",
         "div.byo-block.wysiwyg-block.wysiwyg"
     ],
 
+
+    # -----------------------------------------------------
+    # NEW YORK TIMES
+    # -----------------------------------------------------
+
     [
         "New York Times",
-        "http://nytimes.com",
+        "https://www.nytimes.com",
         "h1",
         "p.story-content"
     ]
+
 ]
 
 
 
 # =========================================================
-# 6. CONVERTIR LAS LISTAS EN OBJETOS WEBSITE
+# 6. CONVERTIR siteData EN OBJETOS WEBSITE
 # =========================================================
 
 websites = []
 
 
 for row in siteData:
-
-    # Cada row tiene:
-    #
-    # row[0] → nombre
-    # row[1] → URL principal
-    # row[2] → selector título
-    # row[3] → selector cuerpo
-
 
     website = Website(
         row[0],
@@ -743,52 +606,101 @@ for row in siteData:
 
 
 # =========================================================
-# 7. PROBAR SOLO BROOKINGS
+# 7. O'REILLY
 # =========================================================
-
-# websites[2]
-#
-# corresponde al objeto Website de Brookings.
-#
-#
-# Mentalmente:
-#
-# websites[2]
-# ├── name = "Brookings"
-# ├── title_selector = "h1"
-# └── body_selector = "div.post-body"
-
 
 content = crawler.parse(
-    websites[2],
-    "https://www.brookings.edu/blog/"
-    "techtank/2016/03/01/"
-    "idea-to-retire-old-methods-of-policy-education/"
+
+    websites[0],
+
+    "http://shop.oreilly.com/product/"
+    "0636920028154.do"
+
 )
 
-
-
-# =========================================================
-# 8. MOSTRAR EL RESULTADO
-# =========================================================
-
-# parse() puede devolver:
-#
-# Content
-#
-# o
-#
-# None
-#
-#
-# Por eso primero comprobamos
-# que realmente haya un Content.
 
 if content is not None:
 
     print("\n")
     print("=" * 60)
-    print("CONTENT FINAL")
+    print("CONTENT O'REILLY")
+    print("=" * 60)
+
+    content.print()
+
+
+
+# =========================================================
+# 8. REUTERS
+# =========================================================
+
+content = crawler.parse(
+
+    websites[1],
+
+    "http://www.reuters.com/article/"
+    "us-usa-epa-pruitt-idUSKBN19W2D0"
+
+)
+
+
+if content is not None:
+
+    print("\n")
+    print("=" * 60)
+    print("CONTENT REUTERS")
+    print("=" * 60)
+
+    content.print()
+
+
+
+# =========================================================
+# 9. BROOKINGS
+# =========================================================
+
+content = crawler.parse(
+
+    websites[2],
+
+    "https://www.brookings.edu/blog/"
+    "techtank/2016/03/01/"
+    "idea-to-retire-old-methods-of-policy-education/"
+
+)
+
+
+if content is not None:
+
+    print("\n")
+    print("=" * 60)
+    print("CONTENT BROOKINGS")
+    print("=" * 60)
+
+    content.print()
+
+
+
+# =========================================================
+# 10. NEW YORK TIMES
+# =========================================================
+
+content = crawler.parse(
+
+    websites[3],
+
+    "https://www.nytimes.com/2018/01/"
+    "28/business/energy-environment/"
+    "oil-boom.html"
+
+)
+
+
+if content is not None:
+
+    print("\n")
+    print("=" * 60)
+    print("CONTENT NEW YORK TIMES")
     print("=" * 60)
 
     content.print()
