@@ -604,103 +604,11 @@ for row in siteData:
     )
 
 
-
-# =========================================================
-# 7. O'REILLY
-# =========================================================
-
-content = crawler.parse(
-
-    websites[0],
-
-    "http://shop.oreilly.com/product/"
-    "0636920028154.do"
-
-)
-
-
-if content is not None:
-
-    print("\n")
-    print("=" * 60)
-    print("CONTENT O'REILLY")
-    print("=" * 60)
-
-    content.print()
-
-
-
-# =========================================================
-# 8. REUTERS
-# =========================================================
-
-content = crawler.parse(
-
-    websites[1],
-
-    "http://www.reuters.com/article/"
-    "us-usa-epa-pruitt-idUSKBN19W2D0"
-
-)
-
-
-if content is not None:
-
-    print("\n")
-    print("=" * 60)
-    print("CONTENT REUTERS")
-    print("=" * 60)
-
-    content.print()
-
-
-
-# =========================================================
-# 9. BROOKINGS
-# =========================================================
-
-content = crawler.parse(
-
-    websites[2],
-
-    "https://www.brookings.edu/blog/"
-    "techtank/2016/03/01/"
-    "idea-to-retire-old-methods-of-policy-education/"
-
-)
-
-
-if content is not None:
-
-    print("\n")
-    print("=" * 60)
-    print("CONTENT BROOKINGS")
-    print("=" * 60)
-
-    content.print()
-
-
-
-# =========================================================
-# 10. NEW YORK TIMES
-# =========================================================
-
-content = crawler.parse(
-
-    websites[3],
-
-    "https://www.nytimes.com/2018/01/"
-    "28/business/energy-environment/"
-    "oil-boom.html"
-
-)
-
-
-if content is not None:
-
-    print("\n")
-    print("=" * 60)
-    print("CONTENT NEW YORK TIMES")
-    print("=" * 60)
-
-    content.print()
+crawler.parse(websites[0], 'http://shop.oreilly.com/product/'\
+'0636920028154.do')
+crawler.parse(websites[1], 'http://www.reuters.com/article/'\
+'us-usa-epa-pruitt-idUSKBN19W2D0')
+crawler.parse(websites[2], 'https://www.brookings.edu/blog/'\
+'techtank/2016/03/01/idea-to-retire-old-methods-of-policy-education/')
+crawler.parse(websites[3], 'https://www.nytimes.com/2018/01/'\
+'28/business/energy-environment/oil-boom.html')
